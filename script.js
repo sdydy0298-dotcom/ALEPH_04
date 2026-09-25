@@ -182,18 +182,9 @@ function recordDetail(row) {
     </div>`;
 }
 
-function renderSnapshots() {
-  const rows = realSnapshots().slice().reverse();
-  el("snapshotCount").textContent = `${rows.length}일`;
-
-  if (!rows.length) {
-    el("recordsList").innerHTML = '<div class="empty-state">정상 조회가 완료되면 오늘 기록이 저장됩니다.</div>';
-    el("snapshotCompare").innerHTML = '<div><span>비교 상태</span><strong>첫 실제 기록을 기다리는 중</strong><small>서로 다른 KST 날짜의 실제 조회 2건이 필요합니다.</small></div>';
-    return;
-  }
-
-  el("recordsList").innerHTML = rows.map((row) => `
-    <div class="record-row-wrap">
+function snapshotRowMarkup(row, modal = false) {
+  return `
+    <div class="record-row-wrap${modal ? " modal-record" : ""}">
       <div class="record-row">
         <span class="record-date">${row.date.replaceAll("-", ".")}</span>
         ${TRACKED.map((code) => `<span class="record-value"><small>${code}</small><strong>${formatKRW(row.values?.[code]?.normalizedValue, 2)}</strong></span>`).join("")}
@@ -202,7 +193,56 @@ function renderSnapshots() {
         <summary>원자료 · 저장값 상세 보기</summary>
         ${recordDetail(row)}
       </details>
-    </div>`).join("");
+    </div>`;
+}
+
+function renderHistoryModal(rows = realSnapshots().slice().reverse()) {
+  const list = el("historyModalList");
+  if (!list) return;
+  list.innerHTML = rows.length
+    ? rows.map((row) => snapshotRowMarkup(row, true)).join("")
+    : '<div class="empty-state">저장된 실제 일별 기록이 없습니다.</div>';
+}
+
+function openHistoryModal() {
+  const modal = el("historyModal");
+  if (!modal) return;
+  renderHistoryModal();
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  el("closeHistoryBtn")?.focus();
+}
+
+function closeHistoryModal() {
+  const modal = el("historyModal");
+  if (!modal || modal.hidden) return;
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  el("openHistoryBtn")?.focus();
+}
+
+function renderSnapshots() {
+  const rows = realSnapshots().slice().reverse();
+  el("snapshotCount").textContent = `${rows.length}일`;
+
+  if (!rows.length) {
+    el("recordsList").innerHTML = '<div class="empty-state">정상 조회가 완료되면 오늘 기록이 저장됩니다.</div>';
+    el("recordsFooter").hidden = true;
+    el("snapshotCompare").innerHTML = '<div><span>비교 상태</span><strong>첫 실제 기록을 기다리는 중</strong><small>서로 다른 KST 날짜의 실제 조회 2건이 필요합니다.</small></div>';
+    renderHistoryModal(rows);
+    return;
+  }
+
+  const visibleRows = rows.slice(0, 3);
+  el("recordsList").innerHTML = visibleRows.map((row) => snapshotRowMarkup(row)).join("");
+  el("recordsFooter").hidden = false;
+  el("recordsSummary").textContent = rows.length > 3
+    ? `최근 3일 표시 · 이전 ${rows.length - 3}일은 전체 기록에서 확인`
+    : `최근 ${rows.length}일 기록 표시`;
+  el("openHistoryBtn").textContent = `전체 기록 보기 (${rows.length}일)`;
+  renderHistoryModal(rows);
 
   const change = changeFromRealSnapshots(state.selected);
   if (change) {
@@ -811,6 +851,12 @@ function bindEvents() {
   });
 
   el("refreshBtn").addEventListener("click", refreshAll);
+  el("openHistoryBtn").addEventListener("click", openHistoryModal);
+  el("closeHistoryBtn").addEventListener("click", closeHistoryModal);
+  document.querySelectorAll("[data-close-history]").forEach((node) => node.addEventListener("click", closeHistoryModal));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeHistoryModal();
+  });
   el("fixtureResetBtn").addEventListener("click", resetFixtureEvaluation);
   el("fixtureRetryBtn").addEventListener("click", retryFixtureRecovery);
 

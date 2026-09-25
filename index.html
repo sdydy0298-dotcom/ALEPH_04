@@ -111,6 +111,10 @@
             <div><span>비교 상태</span><strong>첫 실제 기록을 기다리는 중</strong><small>서로 다른 KST 날짜의 실제 조회 2건이 필요합니다.</small></div>
           </div>
           <div class="records" id="recordsList"><div class="empty-state">정상 조회가 완료되면 오늘 기록이 저장됩니다.</div></div>
+          <div class="records-footer" id="recordsFooter" hidden>
+            <span id="recordsSummary">최근 기록을 표시합니다.</span>
+            <button type="button" class="history-button" id="openHistoryBtn">전체 기록 보기</button>
+          </div>
         </article>
 
         <article class="panel source-panel">
@@ -126,6 +130,22 @@
           <div class="source-message" id="sourceMessage">환율 데이터를 불러오고 있습니다.</div>
         </article>
       </section>
+
+
+      <div class="history-modal" id="historyModal" hidden aria-hidden="true">
+        <div class="history-modal-backdrop" data-close-history></div>
+        <section class="history-modal-card" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+          <div class="history-modal-head">
+            <div>
+              <span class="panel-kicker">DAILY SNAPSHOT HISTORY</span>
+              <h2 id="historyModalTitle">전체 KST 일별 기록</h2>
+              <p>실제 조회로 저장된 날짜별 기록을 최신순으로 확인합니다.</p>
+            </div>
+            <button type="button" class="history-close" id="closeHistoryBtn" aria-label="전체 기록 닫기">×</button>
+          </div>
+          <div class="history-modal-body" id="historyModalList"></div>
+        </section>
+      </div>
 
       <section class="test-lab">
         <details>
